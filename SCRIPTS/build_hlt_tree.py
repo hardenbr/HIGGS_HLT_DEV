@@ -72,16 +72,23 @@ counter = 0
 #build the vectors for the tree
 vectors = []
 vectors_cand = []
+vectors_cand_seed = []
 for ii in handles:
     vector = rt.vector("float")()
     vectors.append((ii[0][0],vector)) #(label, vector)
 
 candidates = ["pt","eta","phi","energy"]
 
+seed_candidates = ["pt","eta","phi","energy"]
+
 #kinematic, vector pairs
 for ii in candidates:
     vector = rt.vector("float")()
     vectors_cand.append((ii,vector))
+
+for ii in seed_candidates:
+    vector = rt.vector("float")()
+    vectors_cand_seed.append((ii,vector))    
 
 events = Events(options.filename)
 tree = rt.TTree("hltTree", "hltTree")
@@ -93,7 +100,9 @@ for ii in vectors:
 for ii in vectors_cand:
     tree.Branch(ii[0],ii[1])
 
-
+for ii in vectors_cand_seed:
+    tree.Branch(ii[0]+"_seed",ii[1])
+    
 # Create a struct for the run information
 rt.gROOT.ProcessLine(\
       "struct MyStruct{\
@@ -155,7 +164,15 @@ for event in events:
                 for vec in vectors_cand: #loop over pt, eta, phi ect..
                     name = vec[0]
                     val = eval("cand[%i].%s()" % (ii,name)) # fill the coressponding val                
-                    if maps.index(map) == 9: vec[1].push_back(val)  #9 is an index for activity handle
+                    if maps.index(map) == 8: vec[1].push_back(val)  #9 is an index for activity handle
+                    # if we used a different index we would only get kinematics for those bits
+
+                    
+            for ii in range(values.size()):
+                for vec in vectors_cand_seed: #loop over pt, eta, phi ect..
+                    name = vec[0]
+                    val = eval("cand[%i].%s()" % (ii,name)) # fill the coressponding val                
+                    if maps.index(map) == 1: vec[1].push_back(val)  #1 is an index for seed handle
                     # if we used a different index we would only get kinematics for those bits
 
     #fill tree and clear the vectors out
@@ -165,6 +182,9 @@ for event in events:
         ii[1].clear()
 
     for ii in vectors_cand:
+        ii[1].clear()
+
+    for ii in vectors_cand_seed:
         ii[1].clear()
                         
     counter+=1
